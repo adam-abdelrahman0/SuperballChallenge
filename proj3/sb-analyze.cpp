@@ -86,40 +86,54 @@ Superball::Superball(int argc, char **argv)
 void Superball::analyze_superball() {
   DisjointSetByRankWPC ds = DisjointSetByRankWPC(r * c);
   vector<int> sizes(r * c, 1);
-  vector<int> alreadyAdded(16);
+  vector<int> alreadyAdded((r - 4) * c);
 
-  int curID = -1, secondID = -1, newID = -1, newSecondID = -1, unionID = -1;
+  int curID = -1, secondID = -1, tempSize;
+  char color;
 
   for (int row = 0; row < r; row++) {
     for (int col = 0; col < c; col++) {
-      if (board[row * c + col] != '*' && board[row * c + col] != '.') {
-        if (col != 0 && 
-            board[row * c + col - 1] == board[row * c + col]) {
-          curID = ds.Find(row * c + col - 1);
-          secondID = ds.Find(row * c + col);
+      color = board[row * c + col];
+      curID = ds.Find(row * c + col);
 
-          unionID = ds.Union(secondID, curID);
+      if (color != '*' && color != '.') {
+        if (col != 0 && color == board[row * c + col - 1]) {
+          secondID = ds.Find(board[row * c + col - 1]);
 
-          sizes[unionID] = sizes[curID] + sizes[secondID];
-
-          if (row != 0 && 
-            board[(row - 1) * (c) + col] == board[row * c + col]) {
-            newID = ds.Find(row * c + col);
-            newSecondID = ds.Find((row - 1) * (c) + col);
-
-            if (newID != secondID && newSecondID != curID) {
-              unionID = ds.Union(newID, newSecondID);
-              sizes[unionID] = sizes[newID] + sizes[secondID];
-            }
+          if (curID != secondID) {
+            tempSize = sizes[curID];
+            curID = ds.Union(curID, secondID);
+            sizes[curID] = tempSize + sizes[secondID];
           }
         }
-        else if (row != 0 && 
-            board[(row - 1) * (c) + col] == board[row * c + col]) {
-          curID = ds.Find((row - 1) * (c) + col);
-          secondID = ds.Find(row * c + col);
-          unionID = ds.Union(secondID, curID);
-          sizes[unionID] = sizes[curID] + sizes[secondID];
+        if (col != c - 1 && color == board[row * c + col + 1]) {
+          secondID = ds.Find(board[row * c + col + 1]);
+
+          if (curID != secondID) {
+            tempSize = sizes[curID];
+            curID = ds.Union(curID, secondID);
+            sizes[curID] = tempSize + sizes[secondID];
+          }
         }
+        if (row != 0 && color == board[(row - 1) * c + col]) {
+          secondID = ds.Find(board[(row - 1) * c + col]);
+
+          if (curID != secondID) {
+            tempSize = sizes[curID];
+            curID = ds.Union(curID, secondID);
+            sizes[curID] = tempSize + sizes[secondID];
+          }
+        }
+        if (row != r - 1 && color == board[(row + 1) * c + col]) {
+          secondID = ds.Find(board[(row + 1) * c + col]);
+
+          if (curID != secondID) {
+            tempSize = sizes[curID];
+            curID = ds.Union(curID, secondID);
+            sizes[curID] = tempSize + sizes[secondID];
+          }
+        }
+        
       }
     }
   }
