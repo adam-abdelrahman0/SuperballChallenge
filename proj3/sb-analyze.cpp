@@ -4,7 +4,10 @@
 #include <ctype.h>
 #include <iostream>
 #include <vector>
+#include <algorithm>
+#include <iomanip>
 #include "disjoint.h"
+
 using namespace std;
 
 #define talloc(type, num) (type *) malloc(sizeof(type)*(num))
@@ -82,34 +85,73 @@ Superball::Superball(int argc, char **argv)
 
 void Superball::analyze_superball() {
   DisjointSetByRankWPC ds = DisjointSetByRankWPC(r * c);
-  int curID = -1;
+  vector<int> sizes(r * c, 1);
+  vector<int> alreadyAdded(16);
+
+  int curID = -1, secondID = -1, newID = -1, newSecondID = -1, unionID = -1;
 
   for (int row = 0; row < r; row++) {
     for (int col = 0; col < c; col++) {
-      if (col != 0 && 
-          board[row * c + col - 1] == board[row * c + col]) {
-        curID = ds.Find(row * c + col - 1);
-        ds.Union(row * c + col, curID);
-      }
-      else if (row != 0 && 
-          board[(row - 1) * (c) + col] == board[row * c + col]) {
-        curID = ds.Find((row - 1) * (c) + col);
-        //cout << char(board[(row - 1) * (c) + col]) << " " << char(board[row * c + col]) << endl;
-        ds.Union(row * c + col, curID);
+      if (board[row * c + col] != '*' && board[row * c + col] != '.') {
+        if (col != 0 && 
+            board[row * c + col - 1] == board[row * c + col]) {
+          curID = ds.Find(row * c + col - 1);
+          secondID = ds.Find(row * c + col);
+
+          unionID = ds.Union(secondID, curID);
+
+          sizes[unionID] = sizes[curID] + sizes[secondID];
+
+          if (row != 0 && 
+            board[(row - 1) * (c) + col] == board[row * c + col]) {
+            newID = ds.Find(row * c + col);
+            newSecondID = ds.Find((row - 1) * (c) + col);
+
+            if (newID != secondID && newSecondID != curID) {
+              unionID = ds.Union(newID, newSecondID);
+              sizes[unionID] = sizes[newID] + sizes[secondID];
+            }
+          }
+        }
+        else if (row != 0 && 
+            board[(row - 1) * (c) + col] == board[row * c + col]) {
+          curID = ds.Find((row - 1) * (c) + col);
+          secondID = ds.Find(row * c + col);
+          unionID = ds.Union(secondID, curID);
+          sizes[unionID] = sizes[curID] + sizes[secondID];
+        }
       }
     }
   }
 
-  /*int scoreCol = 0, size = 0;
-  for (int i = 2; i < 6; i++) {
-    curID = ds.Find(board[i * c + scoreCol]);
-    for (int j = 0; j < r * c; j++) {
+  cout << "Scoring sets:" << endl;
+
+  for (int row = 2; row < r - 2; row++) {
+    curID = ds.Find(row * c);
+    if (sizes[curID] >= mss && find(alreadyAdded.begin(), alreadyAdded.end(), curID) == alreadyAdded.end()) {
+      alreadyAdded.push_back(curID);
+      cout << "  Size: " << sizes[curID] << "  Char: " << char(board[row * c]) << "  Scoring Cell: " << row << ",0" << endl;
     }
-  }*/
 
-  //ds.Print();
+    curID = ds.Find(row * c + 1);
+    if (sizes[curID] >= mss && find(alreadyAdded.begin(), alreadyAdded.end(), curID) == alreadyAdded.end()) {
+      alreadyAdded.push_back(curID);
+      cout << "  Size: " << sizes[curID] << "  Char: " << char(board[row * c + 1]) << "  Scoring Cell: " << row << ",1" << endl;
+    }
+    
+    curID = ds.Find(row * c + c - 2);
+    if (sizes[curID] >= mss && find(alreadyAdded.begin(), alreadyAdded.end(), curID) == alreadyAdded.end()) {
+      alreadyAdded.push_back(curID);
+      cout << "  Size: " << sizes[curID] << "  Char: " << char(board[row * c + c - 2]) << "  Scoring Cell: " << row << "," << c - 2 << endl;
+    }
 
-  cout << "Scoring sets:";
+    curID = ds.Find(row * c + c - 1);
+    if (sizes[curID] >= mss && find(alreadyAdded.begin(), alreadyAdded.end(), curID) == alreadyAdded.end()) {
+      alreadyAdded.push_back(curID);
+      cout << "  Size: " << sizes[curID] << "  Char: " << char(board[row * c + c - 1]) << "  Scoring Cell: " << row << "," << c - 1 << endl;
+    }
+  }
+  
 
   return;
 }
